@@ -1,5 +1,3 @@
-import time
-from datetime import datetime, timedelta, date
 import redis
 
 
@@ -14,11 +12,23 @@ class RedisCli:
         )
         self.engine_name = engine_name
         self.keyword = keyword
+        # self.process_name = f'{engine_name}:::{keyword}:::process'
+        self.data_name = f'{engine_name}:::{keyword}:::data'
 
-    @property
-    def parsed_total_page(self):
-        key = f'{self.engine_name}:::{self.keyword}:::process'
-        return self.con.get(key)
+    # @property
+    # def parsed_total_page(self):
+    #     key = self.process_name
+    #     return self.con.get(key)
+    #
+    # def recode_process(self):
+    #     key = self.process_name
+    #     self.con.incr(key)
+
+    def get_page_data(self, page_no=1, page_size=10):
+        self.con.lrange(self.data_name, (page_no - 1) * page_size, page_size)
+
+    def push_page_data(self, data):
+        self.con.lpush(self.data_name, *data)
 
 
 if __name__ == '__main__':
