@@ -4,6 +4,8 @@ import pathlib
 from selenium import webdriver
 from selenium.webdriver.common.proxy import Proxy, ProxyType
 
+PROXY = '127.0.0.1:1081'
+
 
 def load_default_conf():
     options = webdriver.ChromeOptions()
@@ -14,14 +16,15 @@ def load_default_conf():
     }
 
     options.add_experimental_option("prefs", prefs)
-    # options.add_argument('--headless')
+    options.add_argument('--headless')
     options.add_argument('--no-sandbox')
+    options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    options.add_experimental_option('useAutomationExtension', False)
 
     proxy = Proxy()
     proxy.proxy_type = ProxyType.MANUAL
-    http_proxy = '127.0.0.1:1081'
-    proxy.http_proxy = http_proxy
-    proxy.ssl_proxy = http_proxy
+    proxy.http_proxy = PROXY
+    proxy.ssl_proxy = PROXY
 
     capabilities = webdriver.DesiredCapabilities.CHROME
     proxy.add_to_capabilities(capabilities)

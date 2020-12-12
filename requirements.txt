@@ -1,4 +1,7 @@
 selenium
 scrapy
 redis
-fastapi
+fastapi[all]
+requests
+starlette
+loguru
