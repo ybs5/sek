@@ -4,8 +4,11 @@ from urllib.parse import urlencode
 
 import requests
 from scrapy.http.response.html import HtmlResponse
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.wait import WebDriverWait
 
-from conf.chrome import PROXY
+from conf.chrome import PROXY, YANDEX_CONF
 from engines.base import BaseEngine
 from utils.logger import logger
 
@@ -36,10 +39,11 @@ class Yandex(BaseEngine):
     def _get_text(self, page_index):
         params = {
             'l10n': 'en',
-            'user': 'yb18380488050@gmail.com',
-            'key': '03.1193416151:a5928bd6964f2883e3a93229c1d403cc',
+            'user': YANDEX_CONF['user'],
+            'key': YANDEX_CONF['key'],
             'query': f'{self.keyword}',
-            'page': f'{page_index}'
+            'page': f'{page_index}',
+            'groupby': 'attr="".mode=flat.groups-on-page=100.docs-in-group=1'
         }
         q_str = urlencode(params)
         url = f'https://yandex.com/search/xml?{q_str}'
@@ -66,8 +70,27 @@ class Yandex(BaseEngine):
         if not re.match(r'\d{8}T\d{6}', t): return ''
         return f'{t[:4]}-{t[4:6]}-{t[6:8]} {t[9:11]}:{t[11:13]}:{t[13:15]}'
 
-    def get_pic(self):
-        ...
+    def get_pic(self, fpath, hash_val, ex):
+        self.index_url = 'https://yandex.com/images/'
+        self.search_type = 'pic'
+        results = []
+        with self:
+            self.driver.find_element_by_css_selector('button[aria-label="Image search"]').click()
+            self.driver.find_element_by_css_selector('.cbir-panel__file-input').send_keys(fpath)
+
+            WebDriverWait(self.driver, 20).until(EC.presence_of_element_located((By.CLASS_NAME, "other-sites__head")))
+            resp = HtmlResponse(url=self.driver.current_url, body=self.driver.page_source, encoding='utf-8')
+            for el in resp.css('ul.other-sites__container li'):
+                results.append({
+                    'pic_url': el.css('a.other-sites__preview-link::attr(href)').get(),
+                    'title': el.css('.other-sites__snippet-title a::text').get(),
+                    'detail_url': el.css('.other-sites__snippet-site a::attr(href)').get(),
+                    'website': el.css('.other-sites__snippet-site a::text').get(),
+                    'desc': el.css('.other-sites__snippet-desc::text').get(default='')
+                })
+        if results:
+            self.redis_cli.con.set(hash_val, json.dumps(results), ex=ex)
+        return results
 
     def get_video(self):
         ...
@@ -77,3 +100,4 @@ if __name__ == '__main__':
     yandex = Yandex(keyword='秦始皇')
     with yandex:
         yandex.get_text()
+    # yandex.get_pic()

@@ -28,7 +28,7 @@ class Google(BaseEngine):
         if self.since or self.until:
             self.driver.find_element_by_id('hdtb-tls').click()
             time.sleep(0.5)
-            bt2 = self.driver.find_element_by_css_selector('.hdtb-mn-hd .mn-hd-txt')
+            bt2 = self.driver.find_element_by_css_selector('.hdtb-mn-hd')
             self.driver.execute_script("arguments[0].click();", bt2)
             self.driver.find_element_by_css_selector('#lb g-menu g-menu-item:nth-last-child(1)').click()
             time.sleep(0.3)

@@ -23,12 +23,15 @@ class BaseEngine:
         self.redis_cli = RedisCli(engine_name, keyword, search_type, since, until)
 
     def __enter__(self):
-        if self.engine_name == 'yandex': return
+        if self.engine_name == 'yandex' and self.search_type == 'text': return
         self.driver = webdriver.Chrome(
             executable_path=self.conf['executable_path'],
             options=self.conf['options'],
             desired_capabilities=self.conf['capabilities']
         )
+        self.driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
+            "source": self.conf['stealth_js']
+        })
         self.driver.get(self.index_url)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -38,7 +41,7 @@ class BaseEngine:
 
     @staticmethod
     def sleep_by_random(cur_page=1):
-        nonce = [1.5, 2, 2.4, 2.5, 2.8, 3, 3.5] if cur_page < 5 else [2, 2.5, 2.9, 3, 3.8, 4, 4.5, 5, 6]
+        nonce = [2, 3, 2.4, 4, 2.8, 3, 3.5] if cur_page < 5 else [2, 2.5, 2.9, 3, 3.8, 4, 4.5, 5, 6]
         time.sleep(random.choice(nonce))
 
     @staticmethod
@@ -69,8 +72,8 @@ class BaseEngine:
     def get_text(self):
         raise NotImplementedError
 
-    def get_pic(self):
-        raise NotImplementedError
-
-    def get_video(self):
-        raise NotImplementedError
+    # def get_pic(self):
+    #     raise NotImplementedError
+    #
+    # def get_video(self):
+    #     raise NotImplementedError

@@ -1,8 +1,12 @@
+import hashlib
+import json
 import multiprocessing
+import pathlib
+import tempfile
 import time
 from enum import Enum
 
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, File, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.middleware.cors import CORSMiddleware
@@ -172,11 +176,30 @@ class SameConditionLock:
         logger.info(f'耗时：{cost}S')
 
 
-# @app.get("/api/v1/sek/pic/")
-# def search_pic():
-#     ...
-#
-#
+@app.post("/api/v1/yandex/pic/search")
+def search_pic(pic: UploadFile = File(...)):
+    """YANDEX 以图搜图"""
+    suffix = pathlib.Path(pic.filename).suffix
+    logger.info(f'Received {pic.filename}...')
+    binary_content = pic.file.read()
+    sha1 = hashlib.sha1()
+    sha1.update(binary_content)
+    hash_val = sha1.hexdigest()
+
+    rds_cli = RedisCli()
+    results = rds_cli.con.get(hash_val)
+    if results:
+        data = json.loads(results)
+        return response_fmt(data)
+
+    with tempfile.NamedTemporaryFile(suffix=suffix) as fp:
+        fp.write(binary_content)
+        yandex = Yandex(search_type='pic')
+        results = yandex.get_pic(fp.name, hash_val, ex=12 * 60 * 60)
+        logger.info(f'deleting {fp.name}...')
+    return response_fmt(results)
+
+
 # @app.get("/api/v1/sek/video/")
 # def search_video():
 #     ...
