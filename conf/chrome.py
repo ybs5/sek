@@ -8,7 +8,7 @@ PROXY = '127.0.0.1:1081'
 # yandex帐号配置
 YANDEX_CONF = {
     'user': '',
-    '': ''
+    'key': ''
 }
 
 
